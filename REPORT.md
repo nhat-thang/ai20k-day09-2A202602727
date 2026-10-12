@@ -7,16 +7,16 @@
 | Họ và tên | Nguyễn Nhật Thăng |
 | MSSV (đúng bằng `LAB_STUDENT_ID` trong `.env`) | 2A202602727 |
 | GitHub | nhat-thang |
-| Trip dùng cho bài tập sập và chạy lại (xem GUIDE, bước 5) | trip-05297 |
+| Trip dùng cho bài tập sập và chạy lại (xem GUIDE, bước 5) | trip-08888 |
 
-> Cách tính trip: MSSV có chữ `A` nên lệnh `int(<MSSV>)` trong GUIDE không chạy được; em lấy phần số `202602727 % 26 = 15` → phần tử thứ 15 của `cli list-trips` là **trip-05297** (map_index 15 trong Airflow).
+> Cách tính trip: MSSV có chữ `A` nên lệnh `int(<MSSV>)` trong GUIDE không chạy được; em lấy 5 số cuối `02727`: `2727 % 26 = 23` → phần tử thứ 23 của `cli list-trips` là **trip-08888** (map_index 23 trong Airflow).
 
 ## Kết quả cuối
 
 - `dataset_version` của bạn: `95e23eba8b87`  (khớp `report/evidence/run_summary.json`)
 - Số khung hình train / val / test của bạn: **743 / 129 / 147** (tổng 1019 khung; 18 / 4 / 4 trip)
 - `report/verify.txt`: tạo bằng `python3 scripts/check_submission.py --save-verify` (27/27 checks passed).
-- Ảnh chụp trong `report/screenshots/`: `airflow_graph.png`, `minio_lake.png`, `metabase_dashboard.png`, `crash_log.png` (log task đỏ thấy trip-05297), `crash_rerun_green.png` (Graph xanh sau khi clear).
+- Ảnh chụp trong `report/screenshots/`: `airflow_graph.png`, `minio_lake.png`, `metabase_dashboard.png`, `crash_log.png` (log task đỏ thấy trip-08888), `crash_rerun_green.png` (Graph xanh sau khi clear).
 
 ## Bước 1 · Bronze
 
@@ -104,14 +104,14 @@ Dataset này được tạo từ hai video có sha256 trên, telemetry thô A/B 
 ## Bước 5 · Điều phối và phục vụ
 
 ### Câu 9
-Đặt `LAB_FAIL_ONCE=trip-05297`, trigger `day09_reset` rồi `day09_video_pipeline` (run `pipeline_crash`). Kết quả trên 37 task instance:
-- **1 task đỏ**: `silver_frames` map_index **15**; log có dòng `RuntimeError: simulated crash while extracting trip-05297; run it again`.
+Đặt `LAB_FAIL_ONCE=trip-08888`, trigger `day09_reset` rồi `day09_video_pipeline` (run `crash_trip-08888`). Kết quả trên 37 task instance:
+- **1 task đỏ**: `silver_frames` map_index **23**; log có dòng `RuntimeError: simulated crash while extracting trip-08888; run it again`.
 - **7 task `upstream_failed`**: `dbt_run_silver`, `dbt_test_silver`, `dbt_run_gold`, `dbt_test_gold`, `export_dataset`, `publish_lake`, `publish_warehouse`.
 - **29 task success**: 3 task bronze, `trip_commands` và 25 trip `silver_frames` còn lại — chúng **không chạy lại**.
 
-Em **chỉ clear task đỏ** `silver_frames[15]` (kèm các task phía sau để chúng chạy tiếp). Đúng **8 task chạy lại**: `silver_frames[15]` rồi 7 task phía sau. 25 trip khác và 3 task bronze giữ nguyên kết quả cũ. Run chuyển xanh **37/37 success** sau khoảng 1 phút. Sau đó `scripts/lab.sh verify` cho **27/27**. `dataset_version` vẫn là **`95e23eba8b87`** (giống run xanh trước đó và `run_summary.json`). `lake.silver_frames` có **1246 dòng / 1246 `frame_id` khác nhau**, trip-05297 có 31 dòng. Delta history của `silver.frames` chỉ có **một** commit `WRITE predicate: trip_id = 'trip-05297'` (`rows_added: 31`), từ lần chạy lại.
+Em **chỉ clear task đỏ** `silver_frames[23]` (kèm các task phía sau để chúng chạy tiếp). Đúng **8 task chạy lại**: `silver_frames[23]` rồi 7 task phía sau. 25 trip khác và 3 task bronze giữ nguyên kết quả cũ. Run chuyển xanh **37/37 success** sau khoảng 1 phút. Sau đó `scripts/lab.sh verify` cho **27/27**. `dataset_version` vẫn là **`95e23eba8b87`** (giống run xanh trước đó và `run_summary.json`). `lake.silver_frames` có **1246 dòng / 1246 `frame_id` khác nhau**, trip-08888 có 60 dòng. Delta history của `silver.frames` chỉ có **một** commit `WRITE predicate: trip_id = 'trip-08888'` (`rows_added: 60`), từ lần chạy lại.
 
-Không nhân đôi vì `silver_frames` ghi bằng Delta overwrite theo predicate `trip_id` (giống Câu 4): lần sập xảy ra **trước khi commit**, nên Delta không có gì của trip-05297 ở lần đó, và lần chạy lại ghi đúng một partition. Bằng chứng: ảnh `report/screenshots/crash_log.png` (log task đỏ có trip-05297) và `crash_rerun_green.png` (Graph xanh sau khi clear).
+Không nhân đôi vì `silver_frames` ghi bằng Delta overwrite theo predicate `trip_id` (giống Câu 4): lần sập xảy ra **trước khi commit**, nên Delta không có gì của trip-08888 ở lần đó, và lần chạy lại ghi đúng một partition. Bằng chứng: ảnh `report/screenshots/crash_log.png` (log task đỏ có trip-08888) và `crash_rerun_green.png` (Graph xanh sau khi clear).
 
 ### Câu 10
 Với 500 xe mỗi ngày (so với 2 drive × khoảng 5 phút, 1246 khung), ba chỗ vỡ đầu tiên:
